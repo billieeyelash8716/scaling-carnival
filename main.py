@@ -237,7 +237,10 @@ async def balance(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
     coins = economy.get(user_id, 0)
+    # Save economy to file just in case (optional, only needed if balance changed)
+    save_json(ECONOMY_FILE, economy)
     await interaction.response.send_message(f"You have {coins} coins.")
+
 
 @tree.command(name="daily", description="Claim daily reward")
 async def daily(interaction: discord.Interaction):
