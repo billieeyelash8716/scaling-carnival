@@ -7,13 +7,13 @@ import json
 import os
 from flask import Flask
 from threading import Thread
-import db  # <-- Added for SQLite economy
 
 intents = discord.Intents.default()
 client = commands.Bot(command_prefix="!", intents=intents)
 bot = client
 tree = bot.tree
 
+ECONOMY_FILE = "economy.json"
 COOLDOWNS_FILE = "cooldowns.json"
 
 def load_json(filename):
@@ -115,13 +115,13 @@ async def snake(interaction: discord.Interaction):
     view = SnakeView(interaction.user)
     await interaction.response.send_message(content=view.render(), view=view)
 
-
 # === Blackjack Game ===
 class BlackjackView(View):
     def __init__(self, user, bet):
         super().__init__(timeout=60)
         self.user = user
         self.bet = bet
+        self.economy = load_json(ECONOMY_FILE)
         self.deck = self.create_deck()
         random.shuffle(self.deck)
         self.player_hand = [self.deck.pop(), self.deck.pop()]
@@ -165,12 +165,14 @@ class BlackjackView(View):
 
             if dealer_score > 21 or player_score > dealer_score:
                 result = "You win! ✅"
-                db.add_coins(str(self.user.id), self.bet * 2)
+                self.economy[str(self.user.id)] += self.bet * 2
             elif player_score == dealer_score:
                 result = "Push! 🤝"
-                db.add_coins(str(self.user.id), self.bet)
+                self.economy[str(self.user.id)] += self.bet
             else:
                 result = "Dealer wins! ❌"
+
+        save_json(ECONOMY_FILE, self.economy)
 
         await interaction.response.edit_message(
             content=(
@@ -207,14 +209,16 @@ class BlackjackView(View):
 @app_commands.describe(bet="Bet amount")
 async def blackjack(interaction: discord.Interaction, bet: int):
     user_id = str(interaction.user.id)
-    balance = db.get_coins(user_id)
+    economy = load_json(ECONOMY_FILE)
+    balance = economy.get(user_id, 0)
 
     if bet <= 0:
         return await interaction.response.send_message("Bet must be more than 0.", ephemeral=True)
     if balance < bet:
         return await interaction.response.send_message("You don't have enough coins.", ephemeral=True)
 
-    db.remove_coins(user_id, bet)
+    economy[user_id] -= bet
+    save_json(ECONOMY_FILE, economy)
 
     view = BlackjackView(interaction.user, bet)
     await interaction.response.send_message(
@@ -231,12 +235,14 @@ async def blackjack(interaction: discord.Interaction, bet: int):
 @tree.command(name="balance", description="Check your coin balance")
 async def balance(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
-    coins = db.get_coins(user_id)
+    economy = load_json(ECONOMY_FILE)
+    coins = economy.get(user_id, 0)
     await interaction.response.send_message(f"You have {coins} coins.")
 
 @tree.command(name="daily", description="Claim daily reward")
 async def daily(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
+    economy = load_json(ECONOMY_FILE)
     cooldowns = load_json(COOLDOWNS_FILE)
 
     from datetime import datetime, timedelta
@@ -248,8 +254,10 @@ async def daily(interaction: discord.Interaction):
             remaining = timedelta(hours=24) - (now - last)
             return await interaction.response.send_message(f"Come back in {remaining}.", ephemeral=True)
 
-    db.add_coins(user_id, 100)
+    economy[user_id] = economy.get(user_id, 0) + 100
     cooldowns[user_id] = now.isoformat()
+
+    save_json(ECONOMY_FILE, economy)
     save_json(COOLDOWNS_FILE, cooldowns)
     await interaction.response.send_message("You claimed 100 coins!")
 
@@ -258,26 +266,25 @@ async def daily(interaction: discord.Interaction):
 async def give(interaction: discord.Interaction, user: discord.User, amount: int):
     sender_id = str(interaction.user.id)
     receiver_id = str(user.id)
+    economy = load_json(ECONOMY_FILE)
 
     if interaction.user.id != 824385180944433204:
         return await interaction.response.send_message("You can't use this command.", ephemeral=True)
 
-    db.add_coins(receiver_id, amount)
-    await interaction.response.send_message(f"Gave {amount} coins to {user.mention}.")
-
+    economy[receiver_id] = economy.get(receiver_id, 0) + amount
+    save_json(ECONOMY_FILE, economy)
+    await interaction.response.send_message(f"Gave {amount} coins to {user.name}.")
 
 # === On Ready ===
 @bot.event
 async def on_ready():
-    db.initialize_db()  # Initialize economy DB table
     await tree.sync()
     print(f"Logged in as {bot.user}")
 
-
 if __name__ == "__main__":
-    keep_alive()  
+    keep_alive()
     TOKEN = os.getenv("TOKEN")
     if not TOKEN:
-        print("❌ TOKEN is missing. Set it in Render environment variables.")
+        print("TOKEN IS missing. Set it in Render environment variables.")
     else:
         bot.run(TOKEN)
