@@ -279,6 +279,16 @@ async def give(interaction: discord.Interaction, user: discord.User, amount: int
     save_json(ECONOMY_FILE, economy)
     await interaction.response.send_message(f"Gave {amount} coins to {user.name}.")
 
+
+@tree.command(name="say", description="Send a message as the bot.")
+@app_commands.describe(message="The message to send")
+async def say(interaction: discord.Interaction, message: str):
+    if not any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles):
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    await interaction.channel.send(message)
+
 # === On Ready ===
 @bot.event
 async def on_ready():
