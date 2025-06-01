@@ -283,7 +283,7 @@ async def give(interaction: discord.Interaction, user: discord.User, amount: int
 async def on_ready():
     await tree.sync()
     print(f"Logged in as {bot.user}")
-    await bot.change_presence(status=discord.Status.idle, activity=discord.Game(name="Chilling"))
+    await bot.change_presence(status=discord.Status.idle)
 
 
 if __name__ == "__main__":
