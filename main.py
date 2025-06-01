@@ -129,11 +129,12 @@ class BlackjackView(View):
         self.game_over = False
 
     def create_deck(self):
-        return [v for v in ([str(n) for n in range(2, 11)] + ["J", "Q", "K", "A"]) * 4]
+        return [v for v in ([str(n) for n in range(2, 11)] + ["J", "Q", "K", "A"])*4]
 
     def calculate(self, hand):
-        values = {'J': 10, 'Q': 10, 'K': 10, 'A': 11}
-        total = sum(values.get(card, int(card)) for card in hand)
+        values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+                  '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11}
+        total = sum(values[card] for card in hand)
         aces = hand.count("A")
         while total > 21 and aces:
             total -= 10
@@ -183,7 +184,7 @@ class BlackjackView(View):
             view=self
         )
 
-    @discord.ui.button(label="Hit", style=ButtonStyle.success)
+    @discord.ui.button(label="Hit", style=discord.ButtonStyle.success)
     async def hit(self, interaction: discord.Interaction, button: Button):
         if not self.game_over:
             self.player_hand.append(self.deck.pop())
@@ -199,13 +200,12 @@ class BlackjackView(View):
                     view=self
                 )
 
-    @discord.ui.button(label="Stand", style=ButtonStyle.danger)
+    @discord.ui.button(label="Stand", style=discord.ButtonStyle.danger)
     async def stand(self, interaction: discord.Interaction, button: Button):
         if not self.game_over:
             await self.finish_game(interaction)
 
-@tree.command(name="blackjack", description="Play Blackjack with a coin bet")
-@app_commands.describe(bet="Bet amount")
+@commands.command()
 async def blackjack(interaction: discord.Interaction, bet: int):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -228,6 +228,7 @@ async def blackjack(interaction: discord.Interaction, bet: int):
         ),
         view=view
     )
+
 
 # === Economy Commands ===
 @tree.command(name="balance", description="Check your coin balance")
