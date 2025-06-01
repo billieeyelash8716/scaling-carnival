@@ -276,6 +276,13 @@ async def on_ready():
     await tree.sync()
     print(f"Logged in as {bot.user}")
 
-keep_alive()
-bot.run(MTM3ODc2NTE0MDMwODAwMDg5OQ.GqtCDw.sf00YZWtAqKh4mHZ6pYoXPry28XeRKTdMDYFM0)
+from keep_alive import keep_alive 
+
+if __name__ == "__main__":
+    keep_alive()  
+    TOKEN = os.getenv("TOKEN")
+    if not TOKEN:
+        print("❌ TOKEN is missing. Set it in Render environment variables.")
+    else:
+        bot.run(TOKEN)
 
