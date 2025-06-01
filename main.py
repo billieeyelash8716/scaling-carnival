@@ -263,15 +263,20 @@ async def daily(interaction: discord.Interaction):
 @tree.command(name="give", description="Give coins to another user")
 @app_commands.describe(user="User to give coins to", amount="Amount to give")
 async def give(interaction: discord.Interaction, user: discord.User, amount: int):
-    sender_id = str(interaction.user.id)
+    if not interaction.user.guild_permissions.administrator:
+        return await interaction.response.send_message("Only admins can use this command.", ephemeral=True)
+
+    giver_id = str(interaction.user.id)
     receiver_id = str(user.id)
     economy = load_json(ECONOMY_FILE)
 
-    if interaction.user.id != 824385180944433204:
-        return await interaction.response.send_message("You can't use this command.", ephemeral=True)
+    if economy.get(giver_id, 0) < amount:
+        return await interaction.response.send_message("You don't have enough coins.", ephemeral=True)
 
+    economy[giver_id] -= amount
     economy[receiver_id] = economy.get(receiver_id, 0) + amount
     save_json(ECONOMY_FILE, economy)
+
     await interaction.response.send_message(f"Gave {amount} coins to {user.mention}.")
 
 # === On Ready ===
@@ -281,10 +286,9 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
 
 if __name__ == "__main__":
-    keep_alive()  
+    keep_alive()
     TOKEN = os.getenv("TOKEN")
     if not TOKEN:
-        print("❌ TOKEN is missing. Set it in Render environment variables.")
+        print("TOKEN IS missing. Set it in Render environment variables.")
     else:
         bot.run(TOKEN)
-
