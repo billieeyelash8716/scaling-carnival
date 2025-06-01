@@ -252,12 +252,20 @@ async def daily(interaction: discord.Interaction):
     from datetime import datetime, timedelta
     now = datetime.utcnow()
     last = cooldowns.get(user_id)
+
     if last:
         last = datetime.fromisoformat(last)
-        if now - last < timedelta(hours=24):
-            remaining = timedelta(hours=24) - (now - last)
-            return await interaction.response.send_message(f"Come back in {remaining}.", ephemeral=True)
+        elapsed = now - last
+        cooldown_period = timedelta(hours=24)
+        if elapsed < cooldown_period:
+            remaining = cooldown_period - elapsed
+            hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return await interaction.response.send_message(
+                f"Come back in {hours}h {minutes}m {seconds}s.", ephemeral=True
+            )
 
+    # Give daily coins and save cooldown
     economy[user_id] = economy.get(user_id, 0) + 100
     cooldowns[user_id] = now.isoformat()
 
@@ -294,7 +302,11 @@ async def say(interaction: discord.Interaction, message: str):
 async def on_ready():
     await tree.sync()
     print(f"Logged in as {bot.user}")
-    await bot.change_presence(status=discord.Status.idle)
+    await bot.change_presence(
+    status=discord.Status.idle,
+    activity=discord.Game(name="with your toes!")
+)
+
 
 
 if __name__ == "__main__":
