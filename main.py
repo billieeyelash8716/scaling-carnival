@@ -27,6 +27,8 @@ def save_json(filename, data):
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
 
+from keep_alive import keep_alive 
+
 # === Flask keep-alive ===
 app = Flask("")
 
@@ -39,6 +41,7 @@ def run():
 
 def keep_alive():
     Thread(target=run).start()
+
 
 # === Snake Game ===
 class SnakeView(View):
@@ -275,8 +278,6 @@ async def give(interaction: discord.Interaction, user: discord.User, amount: int
 async def on_ready():
     await tree.sync()
     print(f"Logged in as {bot.user}")
-
-from keep_alive import keep_alive 
 
 if __name__ == "__main__":
     keep_alive()  
