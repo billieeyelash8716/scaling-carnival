@@ -205,7 +205,8 @@ class BlackjackView(View):
         if not self.game_over:
             await self.finish_game(interaction)
 
-@commands.command()
+@tree.command(name="blackjack", description="Play Blackjack with a coin bet")
+@app_commands.describe(bet="Bet amount")
 async def blackjack(interaction: discord.Interaction, bet: int):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -263,20 +264,15 @@ async def daily(interaction: discord.Interaction):
 @tree.command(name="give", description="Give coins to another user")
 @app_commands.describe(user="User to give coins to", amount="Amount to give")
 async def give(interaction: discord.Interaction, user: discord.User, amount: int):
-    if not interaction.user.guild_permissions.administrator:
-        return await interaction.response.send_message("Only admins can use this command.", ephemeral=True)
-
-    giver_id = str(interaction.user.id)
+    sender_id = str(interaction.user.id)
     receiver_id = str(user.id)
     economy = load_json(ECONOMY_FILE)
 
-    if economy.get(giver_id, 0) < amount:
-        return await interaction.response.send_message("You don't have enough coins.", ephemeral=True)
+    if interaction.user.id != 824385180944433204:
+        return await interaction.response.send_message("You can't use this command.", ephemeral=True)
 
-    economy[giver_id] -= amount
     economy[receiver_id] = economy.get(receiver_id, 0) + amount
     save_json(ECONOMY_FILE, economy)
-
     await interaction.response.send_message(f"Gave {amount} coins to {user.mention}.")
 
 # === On Ready ===
@@ -286,9 +282,9 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
 
 if __name__ == "__main__":
-    keep_alive()
+    keep_alive()  
     TOKEN = os.getenv("TOKEN")
     if not TOKEN:
-        print("TOKEN IS missing. Set it in Render environment variables.")
+        print("❌ TOKEN is missing. Set it in Render environment variables.")
     else:
         bot.run(TOKEN)
