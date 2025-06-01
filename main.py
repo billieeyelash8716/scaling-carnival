@@ -8,8 +8,6 @@ import os
 from flask import Flask
 from threading import Thread
 
-TOKEN = "YOUR_DISCORD_BOT_TOKEN"  # Replace with your bot token
-
 intents = discord.Intents.default()
 client = commands.Bot(command_prefix="!", intents=intents)
 bot = client
@@ -279,5 +277,5 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
 
 keep_alive()
-bot.run(DISCORD_TOKEN)
+bot.run(MTM3ODc2NTE0MDMwODAwMDg5OQ.GqtCDw.sf00YZWtAqKh4mHZ6pYoXPry28XeRKTdMDYFM0)
 
