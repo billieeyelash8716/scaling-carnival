@@ -117,6 +117,8 @@ class SnakeView(View):
             await self.respond(interaction)
 
 @tree.command(name="snake", description="Play Snake game for free")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def snake(interaction: discord.Interaction):
     view = SnakeView(interaction.user)
     await interaction.response.send_message(content=view.render(), view=view)
@@ -213,6 +215,8 @@ class BlackjackView(View):
 
 @tree.command(name="blackjack", description="Play Blackjack with a coin bet")
 @app_commands.describe(bet="Bet amount")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def blackjack(interaction: discord.Interaction, bet: int):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -238,6 +242,8 @@ async def blackjack(interaction: discord.Interaction, bet: int):
 
 @tree.command(name="roulette", description="Bet on red, black, or green")
 @app_commands.describe(color="Choose red, black, or green", bet="Bet amount")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def roulette(interaction: discord.Interaction, color: str, bet: int):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -287,6 +293,8 @@ async def roulette(interaction: discord.Interaction, color: str, bet: int):
 
 # === Economy Commands ===
 @tree.command(name="balance", description="Check your coin balance")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def balance(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -294,6 +302,8 @@ async def balance(interaction: discord.Interaction):
     await interaction.response.send_message(f"You have {coins} coins.")
 
 @tree.command(name="daily", description="Claim daily reward")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def daily(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     economy = load_json(ECONOMY_FILE)
@@ -324,6 +334,8 @@ async def daily(interaction: discord.Interaction):
 
 @tree.command(name="give", description="Give coins to another user")
 @app_commands.describe(user="User to give coins to", amount="Amount to give")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def give(interaction: discord.Interaction, user: discord.User, amount: int):
     if interaction.user.id != 824385180944433204:
         return await interaction.response.send_message("You can't use this command.", ephemeral=True)
@@ -336,6 +348,8 @@ async def give(interaction: discord.Interaction, user: discord.User, amount: int
 
 @tree.command(name="say", description="Send a message as the bot.")
 @app_commands.describe(message="The message to send")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+@app_commands.user_install()
 async def say(interaction: discord.Interaction, message: str):
     if interaction.user.id != 824385180944433204:
         return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
