@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord import app_commands, ButtonStyle
 from discord.ui import Button, View
 import random
@@ -8,12 +8,13 @@ import os
 from flask import Flask
 from threading import Thread
 
+# === Discord Setup ===
 intents = discord.Intents.default()
 intents.message_content = True
-client = commands.Bot(command_prefix="!", intents=intents)
-bot = client
+bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
+# === File Handling ===
 ECONOMY_FILE = "economy.json"
 COOLDOWNS_FILE = "cooldowns.json"
 
@@ -31,9 +32,7 @@ def save_json(filename, data):
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
 
-from keep_alive import keep_alive 
-
-# === Flask keep-alive ===
+# === Flask Keep-Alive ===
 app = Flask("")
 
 @app.route("/")
@@ -46,7 +45,6 @@ def run():
 def keep_alive():
     Thread(target=run).start()
 
-
 # === Snake Game ===
 class SnakeView(View):
     def __init__(self, user):
@@ -54,11 +52,15 @@ class SnakeView(View):
         self.user = user
         self.board = [["⬛"] * 5 for _ in range(5)]
         self.snake = [(2, 2)]
-        self.food = (random.randint(0, 4), random.randint(0, 4))
-        while self.food == self.snake[0]:
-            self.food = (random.randint(0, 4), random.randint(0, 4))
+        self.food = self.spawn_food()
         self.direction = (0, 1)
         self.update_board()
+
+    def spawn_food(self):
+        while True:
+            pos = (random.randint(0, 4), random.randint(0, 4))
+            if pos not in self.snake:
+                return pos
 
     def update_board(self):
         for y in range(5):
@@ -82,7 +84,7 @@ class SnakeView(View):
             return False
         self.snake.append(new_head)
         if new_head == self.food:
-            self.food = (random.randint(0, 4), random.randint(0, 4))
+            self.food = self.spawn_food()
         else:
             self.snake.pop(0)
         self.update_board()
@@ -133,7 +135,7 @@ class BlackjackView(View):
         self.game_over = False
 
     def create_deck(self):
-        return [v for v in ([str(n) for n in range(2, 11)] + ["J", "Q", "K", "A"])*4]
+        return [v for v in ([str(n) for n in range(2, 11)] + ["J", "Q", "K", "A"]) * 4]
 
     def calculate(self, hand):
         values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
@@ -234,7 +236,6 @@ async def blackjack(interaction: discord.Interaction, bet: int):
         view=view
     )
 
-
 # === Economy Commands ===
 @tree.command(name="balance", description="Check your coin balance")
 async def balance(interaction: discord.Interaction):
@@ -265,7 +266,6 @@ async def daily(interaction: discord.Interaction):
                 f"Come back in {hours}h {minutes}m {seconds}s.", ephemeral=True
             )
 
-    # Give daily coins and save cooldown
     economy[user_id] = economy.get(user_id, 0) + 100
     cooldowns[user_id] = now.isoformat()
 
@@ -276,17 +276,14 @@ async def daily(interaction: discord.Interaction):
 @tree.command(name="give", description="Give coins to another user")
 @app_commands.describe(user="User to give coins to", amount="Amount to give")
 async def give(interaction: discord.Interaction, user: discord.User, amount: int):
-    sender_id = str(interaction.user.id)
-    receiver_id = str(user.id)
-    economy = load_json(ECONOMY_FILE)
-
     if interaction.user.id != 824385180944433204:
         return await interaction.response.send_message("You can't use this command.", ephemeral=True)
 
+    economy = load_json(ECONOMY_FILE)
+    receiver_id = str(user.id)
     economy[receiver_id] = economy.get(receiver_id, 0) + amount
     save_json(ECONOMY_FILE, economy)
     await interaction.response.send_message(f"Gave {amount} coins to {user.name}.")
-
 
 @tree.command(name="say", description="Send a message as the bot.")
 @app_commands.describe(message="The message to send")
@@ -297,29 +294,21 @@ async def say(interaction: discord.Interaction, message: str):
     await interaction.channel.send(message)
     await interaction.response.send_message("Message sent.", ephemeral=True)
 
-
 # === On Ready ===
 @bot.event
 async def on_ready():
-    tree.allowed_contexts = app_commands.AllowedContext(
-        guilds=True,
-        dms=True,
-        private_channels=True
-    )
-
     await tree.sync()
-    print(f"Logged in as {bot.user}")
     await bot.change_presence(
         status=discord.Status.idle,
         activity=discord.Game(name="with your toes!")
     )
+    print(f"Logged in as {bot.user}")
 
-
-
+# === Run Bot ===
 if __name__ == "__main__":
     keep_alive()
     TOKEN = os.getenv("TOKEN")
     if not TOKEN:
-        print("TOKEN IS missing. Set it in Render environment variables.")
+        print("TOKEN is missing. Set it in Render environment variables.")
     else:
         bot.run(TOKEN)
