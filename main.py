@@ -291,11 +291,12 @@ async def give(interaction: discord.Interaction, user: discord.User, amount: int
 @tree.command(name="say", description="Send a message as the bot.")
 @app_commands.describe(message="The message to send")
 async def say(interaction: discord.Interaction, message: str):
-    if not any(role.id in ALLOWED_ROLE_IDS for role in interaction.user.roles):
-        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-        return
+    if interaction.user.id != 824385180944433204:
+        return await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
 
     await interaction.channel.send(message)
+    await interaction.response.send_message("Message sent.", ephemeral=True)
+
 
 # === On Ready ===
 @bot.event
