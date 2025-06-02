@@ -236,6 +236,55 @@ async def blackjack(interaction: discord.Interaction, bet: int):
         view=view
     )
 
+@tree.command(name="roulette", description="Bet on red, black, or green")
+@app_commands.describe(color="Choose red, black, or green", bet="Bet amount")
+async def roulette(interaction: discord.Interaction, color: str, bet: int):
+    user_id = str(interaction.user.id)
+    economy = load_json(ECONOMY_FILE)
+    balance = economy.get(user_id, 0)
+    color = color.lower()
+
+    if color not in ["red", "black", "green"]:
+        return await interaction.response.send_message("Color must be red, black, or green.", ephemeral=True)
+    if bet <= 0:
+        return await interaction.response.send_message("Bet must be more than 0.", ephemeral=True)
+    if balance < bet:
+        return await interaction.response.send_message("You don't have enough coins.", ephemeral=True)
+
+    # Deduct bet first
+    economy[user_id] = balance - bet
+
+    # Odds setup
+    is_admin = interaction.user.id == 824385180944433204
+
+    if is_admin:
+        win = random.choices([True, False], weights=[8, 2])[0]  # 80% chance to win
+        if win:
+            outcome = color
+        else:
+            outcome = random.choice(["red", "black", "green"])
+            while outcome == color:
+                outcome = random.choice(["red", "black", "green"])
+    else:
+        outcome = random.choices(
+            ["red", "black", "green"],
+            weights=[47, 47, 6],
+            k=1
+        )[0]
+
+    # Calculate result
+    if outcome == color:
+        multiplier = {"red": 2, "black": 2, "green": 15}[color]
+        winnings = bet * multiplier
+        economy[user_id] += winnings
+        result = f"You won! The ball landed on **{outcome}**.\nYou won {winnings} coins!"
+    else:
+        result = f"You lost. The ball landed on **{outcome}**."
+
+    save_json(ECONOMY_FILE, economy)
+    await interaction.response.send_message(result)
+
+
 # === Economy Commands ===
 @tree.command(name="balance", description="Check your coin balance")
 async def balance(interaction: discord.Interaction):
