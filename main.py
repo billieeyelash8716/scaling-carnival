@@ -301,18 +301,18 @@ async def say(interaction: discord.Interaction, message: str):
 # === On Ready ===
 @bot.event
 async def on_ready():
-      tree.allowed_contexts = app_commands.AllowedContext(
+    tree.allowed_contexts = app_commands.AllowedContext(
         guilds=True,
         dms=True,
         private_channels=True
     )
-    
+
     await tree.sync()
     print(f"Logged in as {bot.user}")
     await bot.change_presence(
-    status=discord.Status.idle,
-    activity=discord.Game(name="with your toes!")
-)
+        status=discord.Status.idle,
+        activity=discord.Game(name="with your toes!")
+    )
 
 
 
